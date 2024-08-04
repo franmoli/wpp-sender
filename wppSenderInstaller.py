@@ -8,7 +8,7 @@ import shutil
 
 REPO = "franmoli/wpp-sender"
 APP = 0
-UPDATER = 1
+UPDATER = 2
 
 
 def register_protocol(protocol, command):

@@ -11,7 +11,7 @@ from datetime import datetime
 import os
 
 REPO = "franmoli/wpp-sender"
-VERSION = "0.1.0-alpha"
+VERSION = "0.2.0-alpha"
 COLUMN_USER = "Usuario"
 COLUMN_TELEPHONE = "Telefono"
 COLUMN_MESSAGE = "Mensaje"

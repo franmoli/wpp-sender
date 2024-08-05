@@ -130,6 +130,7 @@ def copiar_mensaje(mensaje):
         pyautogui.press('enter')
         return True
     else:
+        pyautogui.press('enter')
         return False
 
 def testear_mensaje_copiado(mensaje):

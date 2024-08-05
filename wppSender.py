@@ -11,14 +11,21 @@ from datetime import datetime
 import os
 
 REPO = "franmoli/wpp-sender"
-VERSION = "0.2.0-alpha"
+VERSION = "0.2.1-alpha"
 COLUMN_USER = "Usuario"
 COLUMN_TELEPHONE = "Telefono"
 COLUMN_MESSAGE = "Mensaje"
-EXCEL_DIRECTORY = "excel"
+EXCEL_DIRECTORY = "\\excel"
 archivos_excel = []
 
- 
+def excel_directory():
+    # Obtener la ruta completa del ejecutable
+    ruta_ejecutable = sys.executable
+    # Obtener el directorio del ejecutable
+    if "Python" in ruta_ejecutable:
+        return "." + EXCEL_DIRECTORY
+    return os.path.dirname(ruta_ejecutable) + EXCEL_DIRECTORY
+
 def traer_datos(id):
     # URL de la API
     url = 'http://develop.amaip.com.ar/api/get-wpp-msj-list.php?mensaje='
@@ -119,7 +126,6 @@ def copiar_mensaje(mensaje):
     while count <= 5 and not comprobado:
         # focusear_chat()
         pyperclip.copy(mensaje)
-        time.sleep(.5)
         pyautogui.hotkey('ctrl', 'v')
         time.sleep(1)
         count += 1
@@ -138,9 +144,11 @@ def testear_mensaje_copiado(mensaje):
     pyautogui.hotkey('ctrl', 'a')
     pyautogui.hotkey('ctrl', 'c')
 
-    texto_pegado = pyperclip.paste()
+    texto_pegado = pyperclip.paste().replace('\r\n', '\n').replace('\r', '\n')
     
     if(mensaje != texto_pegado):
+        print("Original: " + mensaje)
+        print("Copia: " + texto_pegado)
         pyautogui.hotkey('ctrl', 'x')
         return False
     
@@ -247,17 +255,14 @@ def goToMenuPrincipal():
 
 def refrescarLista():
     global archivos_excel
-    archivos_excel = listar_archivos(EXCEL_DIRECTORY)
+    archivos_excel = listar_archivos(excel_directory())
     
-def textfunct():
-        time.sleep(5)
-    # Copiar el mensaje al portapapeles
-        pyperclip.copy("testeandou")
-        print("Texto anterior: " + pyperclip.paste())
-        
-        pyperclip.copy("false")
-
-        print("Texto actual: " + pyperclip.paste())
+def testfunct():
+        send_wpp("5491164624620", """Hola Brenda! Cómo estás? Sabías que la Nutrición en el 
+                 
+                  deporte es tan importante como el entrenamiento y el descanso? 
+                 
+                 Por eso queremos invitarte a participar de nuestro curso de Nutrición Deportiva. Solo por este mes te ofrecemos un dto del 15con el siguiente cupon. CUPON: DESCUENTONUTRIAMAIPJULIOInscribite en el siguiente link: 👇https://amaip.com.ar/curso.php?id=40""")
 
 def abrirWpp():
     url = "http://wa.me/"
@@ -308,7 +313,7 @@ def main():
     if(args[0] == 'send_list'):
         send_list(args[1])
     
-    archivos_excel = listar_archivos(EXCEL_DIRECTORY)
+    archivos_excel = listar_archivos(excel_directory())
 
     mostrarMenu()
 
@@ -323,6 +328,8 @@ def main():
             abrirWpp()
         if seleccion == "4":
             break
+        if seleccion == "5":
+            testfunct()
         
         goToMenuPrincipal()
 

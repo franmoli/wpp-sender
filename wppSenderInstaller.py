@@ -85,6 +85,7 @@ def main():
     #crear carpetas necesarias 
     os.makedirs("./wppSender/utils")
     os.mkdir("./wppSender/excel")
+    os.mkdir("./wppSender/errores")
 
     # registrar protocolo
     run_as_admin()

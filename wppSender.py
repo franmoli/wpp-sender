@@ -6,9 +6,17 @@ import subprocess
 import pygetwindow as gw
 import pyautogui
 import pyperclip
+import pandas as pd
+from datetime import datetime
+import os
 
 REPO = "franmoli/wpp-sender"
 VERSION = "0.1.0-alpha"
+COLUMN_USER = "Usuario"
+COLUMN_TELEPHONE = "Telefono"
+COLUMN_MESSAGE = "Mensaje"
+EXCEL_DIRECTORY = "excel"
+archivos_excel = []
 
  
 def traer_datos(id):
@@ -63,11 +71,32 @@ def send_wpp(numero, mensaje):
     webbrowser.open(url, new=1)
 
     # Esperar unos segundos
-    time.sleep(3)  
+    time.sleep(4)  
     
     # copiar mensaje y comprobar si esta correcto
-    copiar_mensaje(mensaje)
+    response = copiar_mensaje(mensaje)
 
+    if not response:
+        loguearFallo(numero)
+
+    cerrarVentanaWpp()
+
+def loguearFallo(numero):
+    # Obtener la fecha actual
+    fecha_actual = datetime.now().strftime("%Y-%m-%d")
+    # Nombre del archivo de log basado en la fecha actual
+    nombre_archivo = f"./errores/log_{fecha_actual}.txt"
+    
+    # Formatear el mensaje de error con la hora actual
+    hora_actual = datetime.now().strftime("%H:%M:%S")
+    mensaje_formateado = f"{hora_actual} - ERROR: No se pudo enviar al numero: {numero}\n"
+    
+    # Escribir el mensaje en el archivo (crear o añadir)
+    with open(nombre_archivo, 'a') as archivo_log:
+        archivo_log.write(mensaje_formateado)
+
+def cerrarVentanaWpp():
+    
     # cerrar navegador y seguir 
     windows = gw.getWindowsWithTitle('chrome')  
 
@@ -76,7 +105,7 @@ def send_wpp(numero, mensaje):
         window.activate()    # Enfocar la ventana
         time.sleep(1)        # Esperar un poco antes de enviar la combinación de teclas
 
-        pyautogui.hotkey('ctrl', 'w')  # Ejemplo: cerrar la pestaña activa
+        pyautogui.hotkey('ctrl', 'w') 
     else:
         print("No se encontró la ventana")
 
@@ -85,24 +114,31 @@ def copiar_mensaje(mensaje):
     # seteo el numero de reintentos para copiar el mensaje
     count = 0
 
-    while not testear_mensaje_copiado(mensaje) or count >= 5:
-        focusear_chat()
-        # Copiar el mensaje al portapapeles
+    comprobado = False
+
+    while count <= 5 and not comprobado:
+        # focusear_chat()
         pyperclip.copy(mensaje)
-        # pegar mensaje
+        time.sleep(.5)
         pyautogui.hotkey('ctrl', 'v')
         time.sleep(1)
-        count = count + 1
+        count += 1
+        comprobado = testear_mensaje_copiado(mensaje)
 
     # envio mensaje
-    pyautogui.press('enter')
+    if count <= 5:
+        pyautogui.press('enter')
+        return True
+    else:
+        return False
 
 def testear_mensaje_copiado(mensaje):
+    pyperclip.copy("Reset")
     pyautogui.hotkey('ctrl', 'a')
     pyautogui.hotkey('ctrl', 'c')
 
     texto_pegado = pyperclip.paste()
-
+    
     if(mensaje != texto_pegado):
         pyautogui.hotkey('ctrl', 'x')
         return False
@@ -133,7 +169,31 @@ def check_for_updates(current_version, repo):
         print(e)
     return None
 
-    
+def send_excel():
+    global archivos_excel
+    print("Enviando mensajes...")
+    abrirWpp()
+    for archivo in archivos_excel:
+        try:
+            # Leer el archivo Excel
+            df = pd.read_excel("./excel/" + archivo)
+            
+            # Verificar si las columnas existen
+            if f'{COLUMN_USER}' in df.columns and f'{COLUMN_TELEPHONE}' in df.columns and f'{COLUMN_MESSAGE}' in df.columns:
+                usuarios = df[f'{COLUMN_USER}'].tolist()
+                telefonos = df[f'{COLUMN_TELEPHONE}'].tolist()
+                mensajes = df[f'{COLUMN_MESSAGE}'].tolist()
+
+                # Mostrar los nombres de usuario y sus teléfonos
+                for usuario, telefono, mensaje in zip(usuarios, telefonos, mensajes):
+                    print(f"Enviando a Usuario: {usuario}, Telefono: {telefono}")
+                    send_wpp(f"{telefono}", f"{mensaje}")
+            else:
+                print(f"Las columnas '{COLUMN_USER}' y/o '{COLUMN_TELEPHONE}' no se encontraron en el archivo Excel.")
+        except FileNotFoundError:
+            print(f"El archivo '{archivo}' no se encontró.")
+        except Exception as e:
+            print(f"Ocurrió un error: {e}")
 
 def autoupdate():
     # traer ultima version
@@ -160,19 +220,112 @@ def art():
     """)
     print(f'version v{VERSION}')
 
-def main():
-    art()
-    autoupdate()
+def listar_archivos(carpeta):
+    lista_archivos = []
+    for nombre_archivo in os.listdir(carpeta):
+        ruta_archivo = os.path.join(carpeta, nombre_archivo)
+        if os.path.isfile(ruta_archivo):
+            lista_archivos.append(nombre_archivo)
+    return lista_archivos
 
-    # comprobar instalacion si estan todas las carpetas
+def mostrarMenu():
+    print(f""" 
+        Listas cargadas:
+            {archivos_excel}
+        1-Comenzar envío
+        2-Refrescar listas
+        3-Comprobar whatsapp instalado
+        4-Salir
+
+        """)
+
+def goToMenuPrincipal():
+    # os.system('cls')
+    art()
+    mostrarMenu()
+
+def refrescarLista():
+    global archivos_excel
+    archivos_excel = listar_archivos(EXCEL_DIRECTORY)
+    
+def textfunct():
+        time.sleep(5)
+    # Copiar el mensaje al portapapeles
+        pyperclip.copy("testeandou")
+        print("Texto anterior: " + pyperclip.paste())
+        
+        pyperclip.copy("false")
+
+        print("Texto actual: " + pyperclip.paste())
+
+def abrirWpp():
+    url = "http://wa.me/"
+   # Abrir la URL en un navegador web
+    webbrowser.open(url, new=1)
+
+    time.sleep(6)
+
+    count = 0
+
+    comprobado = False
+
+    while count <= 5 and not comprobado:
+        pyautogui.hotkey('ctrl', '1')
+        pyperclip.copy("Test")
+        time.sleep(.5)
+        pyautogui.hotkey('ctrl', 'v')
+        time.sleep(1)
+        comprobado = testear_mensaje_copiado("Test")
+        count+=1
+    
+    if comprobado:
+        pyautogui.hotkey('ctrl', 'a')
+        pyautogui.hotkey('ctrl', 'x')
+        print(f"Whatsapp comprobado correctamente {count}")
+    else:
+        print("Fallo al abrir whatsapp")
+
+    cerrarVentanaWpp()
+
+    pyautogui.keyDown('alt')
+    pyautogui.press('tab')
+    pyautogui.press('tab')
+    pyautogui.keyUp('alt')
+
+
+
+def main():
+
+    global archivos_excel
+
+    art()
+    # autoupdate()
+
 
     args = parse_url(sys.argv[1:])
 
     if(args[0] == 'send_list'):
         send_list(args[1])
     
-    input("Toque enter para cerrar el programa")
+    archivos_excel = listar_archivos(EXCEL_DIRECTORY)
 
+    mostrarMenu()
+
+    while True:
+        seleccion = input()
+        print(f"presionaste {seleccion}")
+        if seleccion == "1":
+            send_excel()
+        if seleccion == "2":
+            refrescarLista()
+        if seleccion == "3":
+            abrirWpp()
+        if seleccion == "4":
+            break
+        
+        goToMenuPrincipal()
+
+    print("Adios.")
 
 
 if __name__ == "__main__":

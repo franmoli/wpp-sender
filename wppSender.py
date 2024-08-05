@@ -305,7 +305,7 @@ def main():
     global archivos_excel
 
     art()
-    # autoupdate()
+    autoupdate()
 
 
     args = parse_url(sys.argv[1:])

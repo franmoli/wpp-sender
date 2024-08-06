@@ -9,14 +9,18 @@ import pyperclip
 import pandas as pd
 from datetime import datetime
 import os
+import keyboard
 
 REPO = "franmoli/wpp-sender"
 VERSION = "0.2.1-alpha"
 COLUMN_USER = "Usuario"
 COLUMN_TELEPHONE = "Telefono"
 COLUMN_MESSAGE = "Mensaje"
+COLUMN_FILES = "Archivos"
 EXCEL_DIRECTORY = "\\excel"
+FILES_DIRECTORY = "\\archivos"
 archivos_excel = []
+interrupcion = False
 
 def excel_directory():
     # Obtener la ruta completa del ejecutable
@@ -25,6 +29,18 @@ def excel_directory():
     if "Python" in ruta_ejecutable:
         return "." + EXCEL_DIRECTORY
     return os.path.dirname(ruta_ejecutable) + EXCEL_DIRECTORY
+
+def files_directory():
+    # Obtener la ruta completa del ejecutable
+    ruta_ejecutable = sys.executable
+    # Obtener el directorio del ejecutable
+    if "Python" in ruta_ejecutable:
+        return "." + FILES_DIRECTORY
+    return os.path.dirname(ruta_ejecutable) + FILES_DIRECTORY
+
+def interrumpir():
+    global interrupcion
+    interrupcion = True
 
 def traer_datos(id):
     # URL de la API
@@ -71,7 +87,7 @@ def send_list(list_id):
         # envio un mensaje
         send_wpp(usuario[1], mensaje_formateado)
         
-def send_wpp(numero, mensaje):
+def send_wpp(numero, mensaje, archivos = None):
     url = "http://wa.me/" + numero
     print(str(url))
    # Abrir la URL en un navegador web
@@ -85,6 +101,11 @@ def send_wpp(numero, mensaje):
 
     if not response:
         loguearFallo(numero)
+
+    if archivos is not None and response:
+        copiar_archivo(archivos)
+
+    enviar()
 
     cerrarVentanaWpp()
 
@@ -116,6 +137,11 @@ def cerrarVentanaWpp():
     else:
         print("No se encontró la ventana")
 
+def copiar_archivo(archivos):
+    set_clipboard_files(archivos)
+    pyautogui.hotkey('ctrl', 'v')
+    pyautogui.sleep(3)
+
 def copiar_mensaje(mensaje):
     
     # seteo el numero de reintentos para copiar el mensaje
@@ -133,11 +159,12 @@ def copiar_mensaje(mensaje):
 
     # envio mensaje
     if count <= 5:
-        pyautogui.press('enter')
         return True
     else:
-        pyautogui.press('enter')
         return False
+
+def enviar():
+    pyautogui.press('enter')
 
 def testear_mensaje_copiado(mensaje):
     pyperclip.copy("Reset")
@@ -188,15 +215,19 @@ def send_excel():
             df = pd.read_excel("./excel/" + archivo)
             
             # Verificar si las columnas existen
-            if f'{COLUMN_USER}' in df.columns and f'{COLUMN_TELEPHONE}' in df.columns and f'{COLUMN_MESSAGE}' in df.columns:
+            if f'{COLUMN_USER}' in df.columns and f'{COLUMN_TELEPHONE}' in df.columns and f'{COLUMN_MESSAGE}' in df.columns and f'{COLUMN_FILES}' in df.columns:
                 usuarios = df[f'{COLUMN_USER}'].tolist()
                 telefonos = df[f'{COLUMN_TELEPHONE}'].tolist()
                 mensajes = df[f'{COLUMN_MESSAGE}'].tolist()
+                archivos = df[f'{COLUMN_FILES}'].tolist()
 
                 # Mostrar los nombres de usuario y sus teléfonos
-                for usuario, telefono, mensaje in zip(usuarios, telefonos, mensajes):
+                for usuario, telefono, mensaje, archivo in zip(usuarios, telefonos, mensajes, archivos):
+                    if interrupcion:
+                        return
                     print(f"Enviando a Usuario: {usuario}, Telefono: {telefono}")
-                    send_wpp(f"{telefono}", f"{mensaje}")
+                    mensaje = mensaje.replace('{usuario}', usuario)
+                    send_wpp(f"{telefono}", f"{mensaje}", parseFiles(archivo))
             else:
                 print(f"Las columnas '{COLUMN_USER}' y/o '{COLUMN_TELEPHONE}' no se encontraron en el archivo Excel.")
         except FileNotFoundError:
@@ -229,6 +260,11 @@ def art():
     """)
     print(f'version v{VERSION}')
 
+def parseFiles(archivo):
+    if archivo == "":
+        return None
+    return [archivo]
+
 def listar_archivos(carpeta):
     lista_archivos = []
     for nombre_archivo in os.listdir(carpeta):
@@ -241,11 +277,12 @@ def mostrarMenu():
     print(f""" 
         Listas cargadas:
             {archivos_excel}
-        1-Comenzar envío
+        1-Comenzar envío 
         2-Refrescar listas
         3-Comprobar whatsapp instalado
         4-Salir
 
+            Tip: para cortar el envio podes presionar 'q'
         """)
 
 def goToMenuPrincipal():
@@ -257,13 +294,6 @@ def refrescarLista():
     global archivos_excel
     archivos_excel = listar_archivos(excel_directory())
     
-def testfunct():
-        send_wpp("5491164624620", """Hola Brenda! Cómo estás? Sabías que la Nutrición en el 
-                 
-                  deporte es tan importante como el entrenamiento y el descanso? 
-                 
-                 Por eso queremos invitarte a participar de nuestro curso de Nutrición Deportiva. Solo por este mes te ofrecemos un dto del 15con el siguiente cupon. CUPON: DESCUENTONUTRIAMAIPJULIOInscribite en el siguiente link: 👇https://amaip.com.ar/curso.php?id=40""")
-
 def abrirWpp():
     url = "http://wa.me/"
    # Abrir la URL en un navegador web
@@ -298,11 +328,20 @@ def abrirWpp():
     pyautogui.press('tab')
     pyautogui.keyUp('alt')
 
+def set_clipboard_files(files):
+    for archivo in files:
+         fullpath = os.path.join(files_directory(), archivo)
+         os.system(f"""powershell Set-Clipboard -Path '{fullpath}' """)
 
+def testfunct():
+    print("Encontraste una funcion oculta :)")
+    send_wpp("5491164624620", "Testeando man", ["ferrari.jpg"])
 
 def main():
 
     global archivos_excel
+    # Configurar la hotkey
+    keyboard.add_hotkey('q', interrumpir)
 
     art()
     autoupdate()

@@ -223,8 +223,11 @@ def send_excel():
 
                 # Mostrar los nombres de usuario y sus teléfonos
                 for usuario, telefono, mensaje, archivo in zip(usuarios, telefonos, mensajes, archivos):
+                    
                     if interrupcion:
                         return
+                    if pd.isna(telefono):
+                        continue
                     print(f"Enviando a Usuario: {usuario}, Telefono: {telefono}")
                     mensaje = mensaje.replace('{usuario}', usuario)
                     send_wpp(f"{telefono}", f"{mensaje}", parseFiles(archivo))
@@ -261,7 +264,7 @@ def art():
     print(f'version v{VERSION}')
 
 def parseFiles(archivo):
-    if archivo == "":
+    if archivo == "" or archivo == None or pd.isna(archivo):
         return None
     return [archivo]
 

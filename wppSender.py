@@ -12,7 +12,7 @@ import os
 import keyboard
 
 REPO = "franmoli/wpp-sender"
-VERSION = "0.2.1-alpha"
+VERSION = "0.2.2-alpha"
 COLUMN_USER = "Usuario"
 COLUMN_TELEPHONE = "Telefono"
 COLUMN_MESSAGE = "Mensaje"

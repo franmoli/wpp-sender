@@ -12,7 +12,7 @@ import os
 import keyboard
 
 REPO = "franmoli/wpp-sender"
-VERSION = "0.2.3-alpha"
+VERSION = "0.2.4-alpha"
 COLUMN_USER = "Usuario"
 COLUMN_TELEPHONE = "Telefono"
 COLUMN_MESSAGE = "Mensaje"
@@ -41,6 +41,9 @@ def files_directory():
 def interrumpir():
     global interrupcion
     interrupcion = True
+
+def seleccionarChat():
+    pyautogui.hotkey('ctrl', '1')
 
 def traer_datos(id):
     # URL de la API
@@ -230,6 +233,7 @@ def send_excel():
                         continue
                     print(f"Enviando a Usuario: {usuario}, Telefono: {telefono}")
                     mensaje = mensaje.replace('{usuario}', usuario)
+                    seleccionarChat()
                     send_wpp(f"{telefono}", f"{mensaje}", parseFiles(archivo))
             else:
                 print(f"Las columnas '{COLUMN_USER}' y/o '{COLUMN_TELEPHONE}' no se encontraron en el archivo Excel.")

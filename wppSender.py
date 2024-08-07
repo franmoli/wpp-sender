@@ -99,6 +99,7 @@ def send_wpp(numero, mensaje, archivos = None):
     # Esperar unos segundos
     time.sleep(4)  
     
+    seleccionarChat()
     # copiar mensaje y comprobar si esta correcto
     response = copiar_mensaje(mensaje)
 
@@ -233,7 +234,6 @@ def send_excel():
                         continue
                     print(f"Enviando a Usuario: {usuario}, Telefono: {telefono}")
                     mensaje = mensaje.replace('{usuario}', usuario)
-                    seleccionarChat()
                     send_wpp(f"{telefono}", f"{mensaje}", parseFiles(archivo))
             else:
                 print(f"Las columnas '{COLUMN_USER}' y/o '{COLUMN_TELEPHONE}' no se encontraron en el archivo Excel.")

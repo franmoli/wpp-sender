@@ -10,15 +10,15 @@ import pandas as pd
 from datetime import datetime
 import os
 import keyboard
+from sendMessage import send_wpp, abrirWpp
 
 REPO = "franmoli/wpp-sender"
-VERSION = "0.2.4-alpha"
+VERSION = "0.2.6-alpha"
 COLUMN_USER = "Usuario"
 COLUMN_TELEPHONE = "Telefono"
 COLUMN_MESSAGE = "Mensaje"
 COLUMN_FILES = "Archivos"
 EXCEL_DIRECTORY = "\\excel"
-FILES_DIRECTORY = "\\archivos"
 archivos_excel = []
 interrupcion = False
 
@@ -30,20 +30,10 @@ def excel_directory():
         return "." + EXCEL_DIRECTORY
     return os.path.dirname(ruta_ejecutable) + EXCEL_DIRECTORY
 
-def files_directory():
-    # Obtener la ruta completa del ejecutable
-    ruta_ejecutable = sys.executable
-    # Obtener el directorio del ejecutable
-    if "Python" in ruta_ejecutable:
-        return "." + FILES_DIRECTORY
-    return os.path.dirname(ruta_ejecutable) + FILES_DIRECTORY
 
 def interrumpir():
     global interrupcion
     interrupcion = True
-
-def seleccionarChat():
-    pyautogui.hotkey('ctrl', '1')
 
 def traer_datos(id):
     # URL de la API
@@ -90,105 +80,6 @@ def send_list(list_id):
         # envio un mensaje
         send_wpp(usuario[1], mensaje_formateado)
         
-def send_wpp(numero, mensaje, archivos = None):
-    url = "http://wa.me/" + numero
-    print(str(url))
-   # Abrir la URL en un navegador web
-    webbrowser.open(url, new=1)
-
-    # Esperar unos segundos
-    time.sleep(4)  
-    
-    seleccionarChat()
-    # copiar mensaje y comprobar si esta correcto
-    response = copiar_mensaje(mensaje)
-
-    if not response:
-        loguearFallo(numero)
-
-    if archivos is not None and response:
-        copiar_archivo(archivos)
-
-    enviar()
-
-    cerrarVentanaWpp()
-
-def loguearFallo(numero):
-    # Obtener la fecha actual
-    fecha_actual = datetime.now().strftime("%Y-%m-%d")
-    # Nombre del archivo de log basado en la fecha actual
-    nombre_archivo = f"./errores/log_{fecha_actual}.txt"
-    
-    # Formatear el mensaje de error con la hora actual
-    hora_actual = datetime.now().strftime("%H:%M:%S")
-    mensaje_formateado = f"{hora_actual} - ERROR: No se pudo enviar al numero: {numero}\n"
-    
-    # Escribir el mensaje en el archivo (crear o añadir)
-    with open(nombre_archivo, 'a') as archivo_log:
-        archivo_log.write(mensaje_formateado)
-
-def cerrarVentanaWpp():
-    
-    # cerrar navegador y seguir 
-    windows = gw.getWindowsWithTitle('chrome')  
-
-    if windows:
-        window = windows[0]  # Tomar la primera ventana que coincida
-        window.activate()    # Enfocar la ventana
-        time.sleep(1)        # Esperar un poco antes de enviar la combinación de teclas
-
-        pyautogui.hotkey('ctrl', 'w') 
-    else:
-        print("No se encontró la ventana")
-
-def copiar_archivo(archivos):
-    set_clipboard_files(archivos)
-    pyautogui.hotkey('ctrl', 'v')
-    pyautogui.sleep(3)
-
-def copiar_mensaje(mensaje):
-    
-    # seteo el numero de reintentos para copiar el mensaje
-    count = 0
-
-    comprobado = False
-
-    while count <= 5 and not comprobado:
-        # focusear_chat()
-        pyperclip.copy(mensaje)
-        pyautogui.hotkey('ctrl', 'v')
-        time.sleep(1)
-        count += 1
-        comprobado = testear_mensaje_copiado(mensaje)
-
-    # envio mensaje
-    if count <= 5:
-        return True
-    else:
-        return False
-
-def enviar():
-    pyautogui.press('enter')
-
-def testear_mensaje_copiado(mensaje):
-    pyperclip.copy("Reset")
-    pyautogui.hotkey('ctrl', 'a')
-    pyautogui.hotkey('ctrl', 'c')
-
-    texto_pegado = pyperclip.paste().replace('\r\n', '\n').replace('\r', '\n')
-    
-    if(mensaje != texto_pegado):
-        print("Original: " + mensaje)
-        print("Copia: " + texto_pegado)
-        pyautogui.hotkey('ctrl', 'x')
-        return False
-    
-    return True
-
-def focusear_chat():
-    pyautogui.hotkey('ctrl','shift', 'f')
-    pyautogui.press('escape')
-    
 def get_latest_release(repo):
     url = f'https://api.github.com/repos/{repo}/releases/latest'
     response = requests.get(url)
@@ -212,11 +103,18 @@ def check_for_updates(current_version, repo):
 def send_excel():
     global archivos_excel
     print("Enviando mensajes...")
-    abrirWpp()
+    pudoAbrir = False
+    count = 0;
+    while count <= 5 and not pudoAbrir:
+        print("Iniciando wpp")
+        pudoAbrir = abrirWpp()
+        count += 1
+
+        
     for archivo in archivos_excel:
         try:
             # Leer el archivo Excel
-            df = pd.read_excel("./excel/" + archivo)
+            df = pd.read_excel(excel_directory() + "/" + archivo, dtype=str)
             
             # Verificar si las columnas existen
             if f'{COLUMN_USER}' in df.columns and f'{COLUMN_TELEPHONE}' in df.columns and f'{COLUMN_MESSAGE}' in df.columns and f'{COLUMN_FILES}' in df.columns:
@@ -236,7 +134,7 @@ def send_excel():
                     mensaje = mensaje.replace('{usuario}', usuario)
                     send_wpp(f"{telefono}", f"{mensaje}", parseFiles(archivo))
             else:
-                print(f"Las columnas '{COLUMN_USER}' y/o '{COLUMN_TELEPHONE}' no se encontraron en el archivo Excel.")
+                print(f"El archivo excel esta en un formato incorrecto.")
         except FileNotFoundError:
             print(f"El archivo '{archivo}' no se encontró.")
         except Exception as e:
@@ -300,49 +198,38 @@ def goToMenuPrincipal():
 def refrescarLista():
     global archivos_excel
     archivos_excel = listar_archivos(excel_directory())
-    
-def abrirWpp():
-    url = "http://wa.me/"
-   # Abrir la URL en un navegador web
-    webbrowser.open(url, new=1)
 
-    time.sleep(6)
-
-    count = 0
-
-    comprobado = False
-
-    while count <= 5 and not comprobado:
-        pyautogui.hotkey('ctrl', '1')
-        pyperclip.copy("Test")
-        time.sleep(.5)
-        pyautogui.hotkey('ctrl', 'v')
-        time.sleep(1)
-        comprobado = testear_mensaje_copiado("Test")
-        count+=1
-    
-    if comprobado:
-        pyautogui.hotkey('ctrl', 'a')
-        pyautogui.hotkey('ctrl', 'x')
-        print(f"Whatsapp comprobado correctamente {count}")
-    else:
-        print("Fallo al abrir whatsapp")
-
-    cerrarVentanaWpp()
-
-    pyautogui.keyDown('alt')
-    pyautogui.press('tab')
-    pyautogui.press('tab')
-    pyautogui.keyUp('alt')
-
-def set_clipboard_files(files):
-    for archivo in files:
-         fullpath = os.path.join(files_directory(), archivo)
-         os.system(f"""powershell Set-Clipboard -Path '{fullpath}' """)
-
-def testfunct():
+def listarNumeros():
+    global archivos_excel
     print("Encontraste una funcion oculta :)")
-    send_wpp("5491164624620", "Testeando man", ["ferrari.jpg"])
+    print(archivos_excel)
+    for archivo in archivos_excel:
+        print(archivo)
+        try:
+            # Leer el archivo Excel
+            df = pd.read_excel(excel_directory() + "/" + archivo, dtype=str)
+            
+            # Verificar si las columnas existen
+            if f'{COLUMN_USER}' in df.columns and f'{COLUMN_TELEPHONE}' in df.columns and f'{COLUMN_MESSAGE}' in df.columns and f'{COLUMN_FILES}' in df.columns:
+                usuarios = df[f'{COLUMN_USER}'].tolist()
+                telefonos = df[f'{COLUMN_TELEPHONE}'].tolist()
+                mensajes = df[f'{COLUMN_MESSAGE}'].tolist()
+                archivos = df[f'{COLUMN_FILES}'].tolist()
+
+                # Mostrar los nombres de usuario y sus teléfonos
+                for usuario, telefono, mensaje, archivo in zip(usuarios, telefonos, mensajes, archivos):
+                    
+                    if interrupcion:
+                        return
+                    if pd.isna(telefono):
+                        continue
+                    print(f"Enviando a Usuario: {usuario}, Telefono: {telefono}")
+            else:
+                print(f"Las columnas '{COLUMN_USER}' y/o '{COLUMN_TELEPHONE}' no se encontraron en el archivo Excel.")
+        except FileNotFoundError:
+            print(f"El archivo '{archivo}' no se encontró.")
+        except Exception as e:
+            print(f"Ocurrió un error: {e}")
 
 def main():
 
@@ -375,7 +262,7 @@ def main():
         if seleccion == "4":
             break
         if seleccion == "5":
-            testfunct()
+            listarNumeros()
         
         goToMenuPrincipal()
 

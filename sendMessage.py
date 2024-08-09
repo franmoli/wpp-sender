@@ -43,8 +43,8 @@ def send_wpp(numero, mensaje, archivos = None):
         print("Envio correcto a :" + numero)
     else:
         loguearFallo(numero)
-    # enter()
-
+        
+    enter()
     borrarTodo()
 
     cerrarVentanaWpp()

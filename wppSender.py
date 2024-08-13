@@ -19,6 +19,8 @@ COLUMN_TELEPHONE = "Telefono"
 COLUMN_MESSAGE = "Mensaje"
 COLUMN_FILES = "Archivos"
 EXCEL_DIRECTORY = "\\excel"
+
+debug = False
 archivos_excel = []
 interrupcion = False
 
@@ -29,7 +31,6 @@ def excel_directory():
     if "Python" in ruta_ejecutable:
         return "." + EXCEL_DIRECTORY
     return os.path.dirname(ruta_ejecutable) + EXCEL_DIRECTORY
-
 
 def interrumpir():
     global interrupcion
@@ -102,6 +103,7 @@ def check_for_updates(current_version, repo):
 
 def send_excel():
     global archivos_excel
+    global debug
     print("Enviando mensajes...")
     pudoAbrir = False
     count = 0;
@@ -130,9 +132,15 @@ def send_excel():
                         return
                     if pd.isna(telefono):
                         continue
+                    if pd.isna(usuario):
+                        usuario = ''
+                    if pd.isna(mensaje):
+                        mensaje = ''
+                    if pd.isna(archivo):
+                        archivo = ''
                     print(f"Enviando a Usuario: {usuario}, Telefono: {telefono}")
                     mensaje = mensaje.replace('{usuario}', usuario)
-                    send_wpp(f"{telefono}", f"{mensaje}", parseFiles(archivo))
+                    send_wpp(f"{telefono}", f"{mensaje}", parseFiles(archivo), debug)
             else:
                 print(f"El archivo excel esta en un formato incorrecto.")
         except FileNotFoundError:
@@ -179,6 +187,8 @@ def listar_archivos(carpeta):
     return lista_archivos
 
 def mostrarMenu():
+    global debug
+    global archivos_excel
     print(f""" 
         Listas cargadas:
             {archivos_excel}
@@ -186,7 +196,7 @@ def mostrarMenu():
         2-Refrescar listas
         3-Comprobar whatsapp instalado
         4-Salir
-
+        5-Modo de prueba = {debug}
             Tip: para cortar el envio podes presionar 'q'
         """)
 
@@ -234,6 +244,7 @@ def listarNumeros():
 def main():
 
     global archivos_excel
+    global debug
     # Configurar la hotkey
     keyboard.add_hotkey('q', interrumpir)
 
@@ -262,6 +273,8 @@ def main():
         if seleccion == "4":
             break
         if seleccion == "5":
+            debug = not debug
+        if seleccion == "6":
             listarNumeros()
         
         goToMenuPrincipal()

@@ -12,42 +12,42 @@ import os
 import keyboard
 
 FILES_DIRECTORY = "\\archivos"
+chatNumber = 1
 
-def send_wpp(numero, mensaje, archivos = None):
+def send_wpp(numero, mensaje, archivos = None, debug = False):
 
     count = 0
-    numeroIncorrecto = False
+    numeroCorrecto = True
     pudoCopiar = False
 
-    while count <= 5 and not numeroIncorrecto and not pudoCopiar:
+    while count <= 5 and numeroCorrecto and not pudoCopiar:
         # abrir el chat que corresponde y pegar el numero
         pudoAbrir = abrirTelefono(numero)
         if not pudoAbrir:
             print("No lo pude abrir")
             break
-
+        
         # copiar mensaje y comprobar si esta correcto
         pudoCopiar = copiar_mensaje(mensaje)
 
-        if not pudoCopiar:
-            numeroIncorrecto = not testear_numero_correcto()
-            if not numeroIncorrecto:
-                continue
-            
-        if archivos is not None and pudoCopiar:
-            copiar_archivo(archivos)
-        
+
+        if pudoCopiar:
+            if archivos is not None and archivos != '':
+                copiar_archivo(archivos)
+            if not debug:
+                # send msg
+                enter()
+            print("Envio correcto a :" + numero)
+        else:
+            numeroCorrecto = testear_numero_correcto()
+            if not numeroCorrecto:
+                # sacar notificacion
+                enter()
+                loguearFallo(numero)
+                print("Error en envio:" + numero)
         count += 1
-
-    if pudoCopiar:
-        print("Envio correcto a :" + numero)
-    else:
-        loguearFallo(numero)
-
-    enter()
-    borrarTodo()
-
-    cerrarVentanaWpp()
+        
+        cerrarVentanaWpp()
 
 
 def copiar_archivo(archivos):
@@ -80,8 +80,10 @@ def enter():
 
 def testear_numero_correcto():
     print("Testeando si el numero es correcto")
-    pyautogui.hotkey('ctrl', '3')
-    return copiar_mensaje("Test")
+    pyautogui.hotkey('ctrl', chatSelector())
+    pudoCopiar = copiar_mensaje("Test")
+    borrarTodo()
+    return pudoCopiar
 
 def testear_mensaje_copiado(mensaje):
     pyperclip.copy("Reset")
@@ -149,15 +151,13 @@ def abrirWpp():
         comprobado = testear_numero_correcto()
         count += 1
     
-    if comprobado:
-        borrarTodo()
-        print(f"Whatsapp comprobado correctamente {count}")
-    else:
-        print("Fallo al abrir whatsapp")
-        return False
-
     cerrarVentanaWpp()
-    return True
+    if comprobado:
+        print(f"Whatsapp comprobado correctamente {count}")
+        return True
+    else:
+        print("Fallo al abrir whatsapp")  
+        return False
 
 def abrirTelefono(telefono):
     url = "http://wa.me/" + telefono
@@ -174,3 +174,10 @@ def abrirTelefono(telefono):
 def borrarTodo():
     pyautogui.hotkey('ctrl', 'a')
     pyautogui.press('delete')
+
+def chatSelector():
+    global chatNumber
+    if chatNumber == 9:
+        chatNumber = 0
+    chatNumber += 1
+    return f"{chatNumber}"

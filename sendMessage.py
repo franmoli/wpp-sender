@@ -30,10 +30,10 @@ def send_wpp(numero, mensaje, archivos = None):
         pudoCopiar = copiar_mensaje(mensaje)
 
         if not pudoCopiar:
-            numerocorrecto = testear_numero_correcto()
-            if numerocorrecto:
+            numeroIncorrecto = not testear_numero_correcto()
+            if not numeroIncorrecto:
                 continue
-        
+            
         if archivos is not None and pudoCopiar:
             copiar_archivo(archivos)
         
@@ -43,7 +43,7 @@ def send_wpp(numero, mensaje, archivos = None):
         print("Envio correcto a :" + numero)
     else:
         loguearFallo(numero)
-        
+
     enter()
     borrarTodo()
 

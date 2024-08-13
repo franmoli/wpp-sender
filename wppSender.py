@@ -13,12 +13,13 @@ import keyboard
 from sendMessage import send_wpp, abrirWpp
 
 REPO = "franmoli/wpp-sender"
-VERSION = "0.2.6-alpha"
+VERSION = "0.2.7-alpha"
 COLUMN_USER = "Usuario"
 COLUMN_TELEPHONE = "Telefono"
 COLUMN_MESSAGE = "Mensaje"
 COLUMN_FILES = "Archivos"
 EXCEL_DIRECTORY = "\\excel"
+UTILS_DIRECTORY = "\\utils"
 
 debug = False
 archivos_excel = []
@@ -31,7 +32,13 @@ def excel_directory():
     if "Python" in ruta_ejecutable:
         return "." + EXCEL_DIRECTORY
     return os.path.dirname(ruta_ejecutable) + EXCEL_DIRECTORY
-
+def utils_directory():
+     # Obtener la ruta completa del ejecutable
+    ruta_ejecutable = sys.executable
+    # Obtener el directorio del ejecutable
+    if "Python" in ruta_ejecutable:
+        return "." + UTILS_DIRECTORY
+    return os.path.dirname(ruta_ejecutable) + UTILS_DIRECTORY
 def interrumpir():
     global interrupcion
     interrupcion = True
@@ -155,7 +162,7 @@ def autoupdate():
     if update_url:
         print("Nueva versión disponible. Descargando e instalando actualización...")
         # Llama al script de actualización
-        subprocess.Popen([ './utils/wppSenderUpdater.exe', update_url, sys.argv[0]])
+        subprocess.Popen([utils_directory() + "/" +  "wppSenderUpdater.exe", update_url, sys.argv[0]])
         sys.exit()
         
     else:

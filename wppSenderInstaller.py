@@ -109,13 +109,10 @@ def main():
     download_file(download_url, app_updater)
 
      # Reiniciar la aplicación principal
-    print("Reiniciando aplicación...")
-    subprocess.Popen([app_executable])
+    print("Instalacion completa saliendo...")
+    # subprocess.Popen([app_executable])
     sys.exit()
 
-    
-
-    print("se instalo todo joya")
         
 
 
